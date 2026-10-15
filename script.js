@@ -1,6 +1,19 @@
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const shirtsValue = document.getElementById('shirtsValue');
+        const heightValue = document.getElementById('heightValue');
+        const shirtProgress = document.getElementById('shirtProgress');
+        const progressBar = shirtProgress.parentElement;
+        const controlsHint = document.getElementById('controlsHint');
+        const collectToast = document.getElementById('collectToast');
+        const endScreen = document.getElementById('endScreen');
+        const endTitle = document.getElementById('endTitle');
+        const endMessage = document.getElementById('endMessage');
+        const finalScore = document.getElementById('finalScore');
+        const restartButton = document.getElementById('restartButton');
+        let controlsHintTimeout = null;
+        let previousEndState = false;
 
         const dogJumpImg = new Image();
         dogJumpImg.src = 'img/dog-pulando.png'; 
@@ -45,6 +58,7 @@
 
         window.addEventListener('keydown', (e) => {
             if (isGameOver || isWin) {
+                if (e.target === restartButton) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     initGame();
@@ -56,8 +70,14 @@
                 e.preventDefault();
             }
 
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = true;
+                hideControlsHint();
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = true;
+                hideControlsHint();
+            }
         });
 
         window.addEventListener('keyup', (e) => {
@@ -66,6 +86,7 @@
         });
 
         function handleTouch(x) {
+            hideControlsHint();
             if (isGameOver || isWin) {
                 initGame();
                 return;
@@ -93,8 +114,33 @@
         });
 
         canvas.addEventListener('mousedown', () => {
-            if (isGameOver || isWin) initGame();
+            hideControlsHint();
         });
+
+        function hideControlsHint() {
+            controlsHint.hidden = true;
+            window.clearTimeout(controlsHintTimeout);
+        }
+
+        function showControlsHint() {
+            controlsHint.hidden = false;
+            window.clearTimeout(controlsHintTimeout);
+            controlsHintTimeout = window.setTimeout(hideControlsHint, 5000);
+        }
+
+        function showCollectionFeedback() {
+            collectToast.hidden = false;
+            collectToast.classList.remove('is-visible');
+            void collectToast.offsetWidth;
+            collectToast.classList.add('is-visible');
+        }
+
+        collectToast.addEventListener('animationend', () => {
+            collectToast.hidden = true;
+            collectToast.classList.remove('is-visible');
+        });
+
+        restartButton.addEventListener('click', initGame);
 
         function createPlatform(yPosition, referencePlatform) {
             let x = Math.random() * (canvas.width - platformWidth);
@@ -166,6 +212,11 @@
             isWin = false;
             keys.left = false;
             keys.right = false;
+            previousEndState = false;
+            endScreen.hidden = true;
+            collectToast.hidden = true;
+            collectToast.classList.remove('is-visible');
+            showControlsHint();
 
             player.x = canvas.width / 2;
             player.y = 400;
@@ -194,9 +245,23 @@
 
         function drawBackground() {
             const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, '#eaecee');
-            grad.addColorStop(1, '#000007');
+            grad.addColorStop(0, '#f2f0e9');
+            grad.addColorStop(0.58, '#d7d4cb');
+            grad.addColorStop(1, '#aaa79f');
             ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const vignette = ctx.createRadialGradient(
+                canvas.width / 2,
+                canvas.height / 2,
+                canvas.width * 0.2,
+                canvas.width / 2,
+                canvas.height / 2,
+                canvas.height * 0.72
+            );
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.16)');
+            ctx.fillStyle = vignette;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
@@ -205,14 +270,14 @@
                 if (plat.broken) return;
 
                 if (plat.type === 'normal') {
-                    ctx.fillStyle = '#000000';
-                    ctx.strokeStyle = '#ebebeb';
+                    ctx.fillStyle = '#171717';
+                    ctx.strokeStyle = '#f4f1e8';
                 } else if (plat.type === 'moving') {
-                    ctx.fillStyle = '#ebeef0';
-                    ctx.strokeStyle = '#111111';
+                    ctx.fillStyle = '#f4f1e8';
+                    ctx.strokeStyle = '#171717';
                 } else if (plat.type === 'broken') {
-                    ctx.fillStyle = '#8b8b8b';
-                    ctx.strokeStyle = '#f00909';
+                    ctx.fillStyle = '#77746e';
+                    ctx.strokeStyle = '#171717';
                 }
 
                 ctx.lineWidth = 2;
@@ -222,7 +287,7 @@
                 ctx.stroke();
 
                 if (plat.type === 'broken') {
-                    ctx.strokeStyle = '#95a5a6';
+                    ctx.strokeStyle = '#f4f1e8';
                     ctx.beginPath();
                     ctx.moveTo(plat.x + 20, plat.y);
                     ctx.lineTo(plat.x + 35, plat.y + platformHeight);
@@ -234,16 +299,18 @@
         function drawShirts() {
             shirts.forEach(shirt => {
                 if (shirtImg.complete && shirtImg.width > 0) {
+                    ctx.save();
+                    ctx.filter = 'grayscale(1) contrast(1.1)';
                     ctx.drawImage(shirtImg, shirt.x, shirt.y, shirt.width, shirt.height);
+                    ctx.restore();
                 } else {
-                    ctx.fillStyle = '#e74c3c';
+                    ctx.fillStyle = '#f4f1e8';
+                    ctx.strokeStyle = '#171717';
+                    ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.roundRect(shirt.x, shirt.y, shirt.width, shirt.height - 5, 4);
                     ctx.fill();
-
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 10px sans-serif';
-                    ctx.fillText('', shirt.x + 6, shirt.y + 20);
+                    ctx.stroke();
                 }
             });
         }
@@ -262,61 +329,42 @@
             }
 
             if (currentImg.complete && currentImg.width > 0) {
+                ctx.save();
+                ctx.filter = 'grayscale(1) contrast(1.05)';
                 ctx.drawImage(currentImg, player.x - player.radius, player.y - player.radius, size, size);
+                ctx.restore();
             } else {
-                ctx.fillStyle = '#e67e22';
+                ctx.fillStyle = '#171717';
                 ctx.beginPath();
                 ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        function drawUI() {
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 18px sans-serif';
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.shadowBlur = 4;
-            
-            ctx.fillText(`Camisetas: ${shirtsCollected}/${TOTAL_SHIRTS}`, 15, 35);
-            ctx.fillText(`Alt: ${Math.floor(score)}m`, canvas.width - 110, 35);
+        function updateInterface() {
+            const collected = `${shirtsCollected}/${TOTAL_SHIRTS}`;
+            shirtsValue.textContent = collected;
+            heightValue.textContent = Math.floor(score);
+            shirtProgress.style.width = `${(shirtsCollected / TOTAL_SHIRTS) * 100}%`;
+            progressBar.setAttribute('aria-valuenow', shirtsCollected);
 
-            ctx.shadowBlur = 0;
-
-            if (isGameOver || isWin) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.textAlign = 'center';
-
-                if (isWin) {
-                    ctx.fillStyle = '#2ecc71';
-                    ctx.font = 'bold 28px sans-serif';
-                    ctx.fillText('🎉 MISSÃO CUMPRIDA! 🎉', canvas.width / 2, canvas.height / 2 - 50);
-
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '19px sans-serif';
-                    ctx.fillText(`Você pegou as ${TOTAL_SHIRTS} camisetas!`, canvas.width / 2, canvas.height / 2);
-                    ctx.fillText(`Pontuação Final: ${Math.floor(score)}`, canvas.width / 2, canvas.height / 2 + 35);
-
-                    ctx.fillStyle = '#f1c40f';
-                    ctx.font = '16px sans-serif';
-                    ctx.fillText('Toque ou pressione Enter para jogar novamente', canvas.width / 2, canvas.height / 2 + 85);
-                } else if (isGameOver) {
-                    ctx.fillStyle = '#e74c3c';
-                    ctx.font = 'bold 32px sans-serif';
-                    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 40);
-
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '18px sans-serif';
-                    ctx.fillText(`Camisetas Coletadas: ${shirtsCollected}/${TOTAL_SHIRTS}`, canvas.width / 2, canvas.height / 2 + 10);
-
-                    ctx.fillStyle = '#f39c12';
-                    ctx.font = '16px sans-serif';
-                    ctx.fillText('Toque ou pressione Enter para tentar novamente', canvas.width / 2, canvas.height / 2 + 65);
-                }
-
-                ctx.textAlign = 'left';
+            const isEnded = isGameOver || isWin;
+            endScreen.hidden = !isEnded;
+            if (!isEnded) {
+                previousEndState = false;
+                return;
             }
+
+            endTitle.textContent = isWin ? 'Missão cumprida!' : 'Fim de jogo';
+            endMessage.textContent = isWin
+                ? `Você coletou as ${TOTAL_SHIRTS} camisetas!`
+                : `Você coletou ${collected} camisetas.`;
+            finalScore.textContent = Math.floor(score);
+
+            if (!previousEndState) {
+                restartButton.focus();
+            }
+            previousEndState = true;
         }
 
         function updatePlayer() {
@@ -411,6 +459,7 @@
 
                 if (distX * distX + distY * distY < player.radius ** 2) {
                     shirtsCollected++;
+                    showCollectionFeedback();
                     if (shirtsCollected >= TOTAL_SHIRTS) {
                         isWin = true;
                     }
@@ -444,7 +493,7 @@
             drawPlatforms();
             drawShirts();
             drawPlayer();
-            drawUI();
+            updateInterface();
 
             requestAnimationFrame(gameLoop);
         }
