@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Dog Jump - Desafio das 6 Camisetas</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,11 +12,22 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            height: 100dvh;
+            padding:
+                env(safe-area-inset-top)
+                env(safe-area-inset-right)
+                env(safe-area-inset-bottom)
+                env(safe-area-inset-left);
             overflow: hidden;
             font-family: sans-serif;
             touch-action: none;
         }
         #gameCanvas {
+            width: min(100%, calc((100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 2 / 3));
+            width: min(100%, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 2 / 3));
+            max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            aspect-ratio: 2 / 3;
             background: linear-gradient(to bottom, #a1c4fd, #c2e9fb);
             border: 4px solid #fff;
             border-radius: 12px;
