@@ -5,6 +5,9 @@
         const dogJumpImg = new Image();
         dogJumpImg.src = 'img/dog-pulando.png'; 
 
+        const dogFallImg = new Image();
+        dogFallImg.src = 'img/dog-decendo.png';
+
         const dogLeftImg = new Image();
         dogLeftImg.src = 'img/dog-left.png'; 
 
@@ -252,6 +255,8 @@
             let currentImg = dogRightImg;
             if (player.vy < 0) {
                 currentImg = dogJumpImg;
+            } else if (player.vy > 0) {
+                currentImg = dogFallImg;
             } else {
                 currentImg = (player.facing === 'left') ? dogLeftImg : dogRightImg;
             }
