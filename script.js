@@ -2,20 +2,18 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // --- CARREGAMENTO DOS SPRITES COM FUNDO TRANSPARENTE ---
         const dogJumpImg = new Image();
-        dogJumpImg.src = 'img/dog-pulando.png'; // Subindo / Pulando
+        dogJumpImg.src = 'img/dog-pulando.png'; 
 
         const dogLeftImg = new Image();
-        dogLeftImg.src = 'img/dog-left.png'; // Andando para a esquerda
+        dogLeftImg.src = 'img/dog-left.png'; 
 
         const dogRightImg = new Image();
-        dogRightImg.src = 'img/dog-right.png'; // Andando para a direita
+        dogRightImg.src = 'img/dog-right.png';
 
         const shirtImg = new Image();
-        shirtImg.src = 'img/camiseta.png'; // Imagem da camiseta
+        shirtImg.src = 'img/camiseta.png';
 
-        // JOGADOR (CACHORRINHO)
         const player = {
             x: 0,
             y: 0,
@@ -25,10 +23,9 @@
             speed: 5.5,
             gravity: 0.4,
             jumpForce: -12.5,
-            facing: 'right' // Direção que ele está olhando
+            facing: 'right' 
         };
 
-        // VARIÁVEIS DE ESTADO
         let score = 0;
         let shirtsCollected = 0;
         const TOTAL_SHIRTS = 6;
@@ -41,7 +38,6 @@
         let shirts = [];
         let totalPlatformsCreated = 0;
 
-        // CONTROLES (TOUCH E TECLADO)
         const keys = { left: false, right: false };
 
         window.addEventListener('keydown', (e) => {
@@ -97,7 +93,6 @@
             if (isGameOver || isWin) initGame();
         });
 
-        // CRIAÇÃO PROCEDURAL DE PLATAFORMA
         function createPlatform(yPosition, referencePlatform) {
             let x = Math.random() * (canvas.width - platformWidth);
             if (referencePlatform) {
@@ -142,7 +137,6 @@
                 broken: false
             };
 
-            // Spawner de Camisetas
             if (
                 shirtsCollected + shirts.length < TOTAL_SHIRTS &&
                 type === 'normal' &&
@@ -161,7 +155,6 @@
             return newPlat;
         }
 
-        // INICIALIZAÇÃO E REINÍCIO
         function initGame() {
             score = 0;
             shirtsCollected = 0;
@@ -196,7 +189,6 @@
             }
         }
 
-        // DESENHAR FUNDO
         function drawBackground() {
             const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
             grad.addColorStop(0, '#eaecee');
@@ -205,7 +197,6 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // DESENHAR PLATAFORMAS
         function drawPlatforms() {
             platforms.forEach(plat => {
                 if (plat.broken) return;
@@ -249,18 +240,15 @@
 
                     ctx.fillStyle = '#fff';
                     ctx.font = 'bold 10px sans-serif';
-                    ctx.fillText('👕', shirt.x + 6, shirt.y + 20);
+                    ctx.fillText('', shirt.x + 6, shirt.y + 20);
                 }
             });
         }
 
-        // DESENHAR CACHORRINHO (COM OS SPRITES TRANSPARENTES)
+    
         function drawPlayer() {
             const size = player.radius * 2.2;
 
-            // Escolhe qual sprite usar:
-            // Se estiver subindo (vy < 0), usa o dogJumpImg (patas para cima)
-            // Se estiver caindo ou parado, usa o sprite lateral correspondente à direção que olha
             let currentImg = dogRightImg;
             if (player.vy < 0) {
                 currentImg = dogJumpImg;
@@ -271,7 +259,6 @@
             if (currentImg.complete && currentImg.width > 0) {
                 ctx.drawImage(currentImg, player.x - player.radius, player.y - player.radius, size, size);
             } else {
-                // Fallback visual caso falte carregar a imagem
                 ctx.fillStyle = '#e67e22';
                 ctx.beginPath();
                 ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
@@ -279,14 +266,13 @@
             }
         }
 
-        // INTERFACE VISUAL (HUD E TELAS)
         function drawUI() {
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 18px sans-serif';
             ctx.shadowColor = 'rgba(0,0,0,0.5)';
             ctx.shadowBlur = 4;
             
-            ctx.fillText(`👕 Camisetas: ${shirtsCollected}/${TOTAL_SHIRTS}`, 15, 35);
+            ctx.fillText(`Camisetas: ${shirtsCollected}/${TOTAL_SHIRTS}`, 15, 35);
             ctx.fillText(`Alt: ${Math.floor(score)}m`, canvas.width - 110, 35);
 
             ctx.shadowBlur = 0;
@@ -328,11 +314,9 @@
             }
         }
 
-        // ATUALIZAÇÃO DA LÓGICA DO JOGO
         function updatePlayer() {
             if (isGameOver || isWin) return;
 
-            // Movimento Horizontal e atualização da direção (facing)
             if (keys.left) {
                 player.vx = -player.speed;
                 player.facing = 'left';
@@ -345,15 +329,14 @@
 
             player.x += player.vx;
 
-            // Wrap Around
             if (player.x + player.radius < 0) player.x = canvas.width + player.radius;
             else if (player.x - player.radius > canvas.width) player.x = -player.radius;
 
-            // Gravidade
+ 
             player.vy += player.gravity;
             player.y += player.vy;
 
-            // Plataformas Móveis
+
             platforms.forEach(plat => {
                 if (plat.type === 'moving') {
                     plat.x += plat.vx;
@@ -363,14 +346,12 @@
                 }
             });
 
-            // Sincroniza Camisetas com Plataformas Móveis
             shirts.forEach(shirt => {
                 if (shirt.platformRef) {
                     shirt.x = shirt.platformRef.x + platformWidth / 2 - 15;
                 }
             });
 
-            // Câmera Scroll
             if (player.y < canvas.height / 2 && player.vy < 0) {
                 const diff = (canvas.height / 2) - player.y;
                 player.y = canvas.height / 2;
@@ -381,11 +362,10 @@
                 score += diff;
             }
 
-            // Remoção de itens antigos
             platforms = platforms.filter(plat => plat.y < canvas.height + 50);
             shirts = shirts.filter(shirt => shirt.y < canvas.height + 50);
 
-            // Gerador de plataformas no topo
+
             const highestPlatform = platforms.reduce(
                 (highest, platform) => platform.y < highest.y ? platform : highest,
                 platforms[0]
@@ -395,7 +375,6 @@
                 platforms.push(createPlatform(newY, highestPlatform));
             }
 
-            // COLISÃO COM PLATAFORMAS (Impulso inclusive nas quebráveis)
             if (player.vy > 0) {
                 const landedPlatform = platforms.find(plat => {
                     if (plat.broken) return false;
@@ -419,7 +398,6 @@
                 }
             }
 
-            // COLETA DAS CAMISETAS
             shirts = shirts.filter(shirt => {
                 const nearestX = Math.max(shirt.x, Math.min(player.x, shirt.x + shirt.width));
                 const nearestY = Math.max(shirt.y, Math.min(player.y, shirt.y + shirt.height));
@@ -436,13 +414,11 @@
                 return true;
             });
 
-            // GAME OVER
             if (player.y - player.radius > canvas.height) {
                 isGameOver = true;
             }
         }
 
-        // LOOP PRINCIPAL
         const FRAME_DURATION = 1000 / 60;
         let previousFrameTime = null;
         let timeAccumulator = 0;
