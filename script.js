@@ -58,6 +58,8 @@
 
         const platformWidth = 75;
         const platformHeight = 15;
+        const shirtWidth = 40;
+        const shirtHeight = 32;
         let platforms = [];
         let shirts = [];
         let totalPlatformsCreated = 0;
@@ -201,10 +203,10 @@
             ) {
                 const shirtImage = shirtImages[Math.floor(Math.random() * shirtImages.length)];
                 shirts.push({
-                    x: newPlat.x + platformWidth / 2 - 15,
-                    y: newPlat.y - 32,
-                    width: 30,
-                    height: 30,
+                    x: newPlat.x + platformWidth / 2 - shirtWidth / 2,
+                    y: newPlat.y - shirtHeight - 2,
+                    width: shirtWidth,
+                    height: shirtHeight,
                     image: shirtImage,
                     platformRef: newPlat
                 });
@@ -411,7 +413,7 @@
 
             shirts.forEach(shirt => {
                 if (shirt.platformRef) {
-                    shirt.x = shirt.platformRef.x + platformWidth / 2 - 15;
+                    shirt.x = shirt.platformRef.x + platformWidth / 2 - shirt.width / 2;
                 }
             });
 
