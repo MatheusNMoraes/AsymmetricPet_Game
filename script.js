@@ -27,8 +27,16 @@
         const dogRightImg = new Image();
         dogRightImg.src = 'img/dog-right.png';
 
-        const shirtImg = new Image();
-        shirtImg.src = 'img/camiseta.png';
+        const shirtImages = [
+            'img/camiseta.png',
+            'img/camiseta-cavera.png',
+            'img/camisetaArmadillosB.png'
+        ].map(src => {
+            const image = new Image();
+            image.src = src;
+            image.onerror = () => console.error(`Não foi possível carregar o modelo de camiseta: ${src}`);
+            return image;
+        });
 
         const player = {
             x: 0,
@@ -191,11 +199,13 @@
                 type === 'normal' &&
                 totalPlatformsCreated % 5 === 0
             ) {
+                const shirtImage = shirtImages[Math.floor(Math.random() * shirtImages.length)];
                 shirts.push({
                     x: newPlat.x + platformWidth / 2 - 15,
                     y: newPlat.y - 32,
                     width: 30,
                     height: 30,
+                    image: shirtImage,
                     platformRef: newPlat
                 });
             }
@@ -298,10 +308,10 @@
 
         function drawShirts() {
             shirts.forEach(shirt => {
-                if (shirtImg.complete && shirtImg.width > 0) {
+                if (shirt.image.complete && shirt.image.naturalWidth > 0) {
                     ctx.save();
                     ctx.filter = 'grayscale(1) contrast(1.1)';
-                    ctx.drawImage(shirtImg, shirt.x, shirt.y, shirt.width, shirt.height);
+                    ctx.drawImage(shirt.image, shirt.x, shirt.y, shirt.width, shirt.height);
                     ctx.restore();
                 } else {
                     ctx.fillStyle = '#f4f1e8';
