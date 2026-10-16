@@ -135,6 +135,52 @@
             pointer-events: none;
         }
 
+        .menu-screen {
+            position: absolute;
+            z-index: 4;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background:
+                repeating-linear-gradient(135deg, rgb(23 23 23 / 3%) 0 2px, transparent 2px 8px),
+                rgb(244 241 232 / 96%);
+        }
+
+        .menu-content {
+            width: min(100%, 310px);
+            text-align: center;
+            animation: card-enter 350ms ease both;
+        }
+
+        .menu-logo-image {
+            display: block;
+            width: clamp(100px, 30vw, 150px);
+            aspect-ratio: 1;
+            object-fit: contain;
+            margin: 0 auto 8px;
+        }
+
+        .menu-title {
+            margin: 0;
+            color: #171717;
+            font-size: 32px;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+
+        .menu-subtitle {
+            margin: 10px 0 24px;
+            color: #55534e;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .menu-screen[hidden] {
+            display: none;
+        }
+
         .controls-hint {
             bottom: 18px;
         }
@@ -220,7 +266,8 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .restart-button {
+        .restart-button,
+        .start-button {
             width: 100%;
             min-height: 48px;
             border: 2px solid #171717;
@@ -235,9 +282,12 @@
             transition: transform 150ms ease, filter 150ms ease;
         }
 
-        .restart-button:hover { background: #3b3b3b; }
-        .restart-button:active { transform: scale(.98); }
-        .restart-button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+        .restart-button:hover,
+        .start-button:hover { background: #3b3b3b; }
+        .restart-button:active,
+        .start-button:active { transform: scale(.98); }
+        .restart-button:focus-visible,
+        .start-button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 
         @media (max-height: 440px) and (orientation: landscape) {
             .hud { top: 8px; }
@@ -261,6 +311,15 @@
 <body>
     <main class="game-shell" aria-label="Dog Jump">
         <canvas id="gameCanvas" width="400" height="600" aria-label="Jogo Dog Jump"></canvas>
+
+        <section class="menu-screen" id="menuScreen" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+            <div class="menu-content">
+                <img class="menu-logo-image" src="img/dog-right.png" alt="">
+                <h1 class="menu-title" id="menuTitle">Asymmetric Pet</h1>
+                <p class="menu-subtitle">Dog Jump</p>
+                <button class="start-button" id="startButton" type="button">Jogar</button>
+            </div>
+        </section>
 
         <section class="hud" aria-label="Progresso da partida">
             <div class="hud-card">

@@ -12,8 +12,11 @@
         const endMessage = document.getElementById('endMessage');
         const finalScore = document.getElementById('finalScore');
         const restartButton = document.getElementById('restartButton');
+        const menuScreen = document.getElementById('menuScreen');
+        const startButton = document.getElementById('startButton');
         let controlsHintTimeout = null;
         let previousEndState = false;
+        let isGameStarted = false;
 
         const dogJumpImg = new Image();
         dogJumpImg.src = 'img/dog-pulando.png'; 
@@ -69,6 +72,15 @@
         window.addEventListener('keydown', (e) => {
             if (isGameOver || isWin) {
                 if (e.target === restartButton) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    initGame();
+                }
+                return;
+            }
+
+            if (!isGameStarted) {
+                if (e.target === startButton) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     initGame();
@@ -151,6 +163,7 @@
         });
 
         restartButton.addEventListener('click', initGame);
+        startButton.addEventListener('click', initGame);
 
         function createPlatform(yPosition, referencePlatform) {
             let x = Math.random() * (canvas.width - platformWidth);
@@ -217,6 +230,8 @@
         }
 
         function initGame() {
+            isGameStarted = true;
+            menuScreen.hidden = true;
             score = 0;
             shirtsCollected = 0;
             totalPlatformsCreated = 0;
@@ -342,7 +357,6 @@
 
             if (currentImg.complete && currentImg.width > 0) {
                 ctx.save();
-                ctx.filter = 'grayscale(1) contrast(1.05)';
                 ctx.drawImage(currentImg, player.x - player.radius, player.y - player.radius, size, size);
                 ctx.restore();
             } else {
@@ -495,7 +509,7 @@
             timeAccumulator += elapsed;
 
             while (timeAccumulator >= FRAME_DURATION) {
-                updatePlayer();
+                if (isGameStarted) updatePlayer();
                 timeAccumulator -= FRAME_DURATION;
             }
 
@@ -510,5 +524,4 @@
             requestAnimationFrame(gameLoop);
         }
 
-        initGame();
         requestAnimationFrame(gameLoop);
