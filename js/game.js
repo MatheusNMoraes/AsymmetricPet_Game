@@ -7,6 +7,7 @@
         const progressBar = shirtProgress.parentElement;
         const controlsHint = document.getElementById('controlsHint');
         const collectToast = document.getElementById('collectToast');
+        const soundToggle = document.getElementById('soundToggle');
         const endScreen = document.getElementById('endScreen');
         const endTitle = document.getElementById('endTitle');
         const endMessage = document.getElementById('endMessage');
@@ -17,29 +18,49 @@
         let controlsHintTimeout = null;
         let previousEndState = false;
         let isGameStarted = false;
+        let soundEnabled = true;
+        const ambientSound = new Audio('assets/audio/som-ambiente.mp3');
+        ambientSound.preload = 'none';
+        ambientSound.loop = true;
+        ambientSound.volume = 0.25;
+        const collectionSound = new Audio('assets/audio/som-camiseta.mp3');
+        collectionSound.preload = 'none';
+        collectionSound.volume = 0.8;
+        const gameOverSound = new Audio('assets/audio/som-gameover.mp3');
+        gameOverSound.preload = 'none';
+        gameOverSound.volume = 0.8;
+        const winSound = new Audio('assets/audio/som-win.mp3');
+        winSound.preload = 'none';
+        winSound.volume = 0.8;
 
         const dogJumpImg = new Image();
-        dogJumpImg.src = 'img/dog-pulando.png'; 
+        dogJumpImg.src = 'assets/images/optimized/dog-pulando.png'; 
 
         const dogFallImg = new Image();
-        dogFallImg.src = 'img/dog-decendo.png';
+        dogFallImg.src = 'assets/images/optimized/dog-decendo.png';
 
         const dogLeftImg = new Image();
-        dogLeftImg.src = 'img/dog-left.png'; 
+        dogLeftImg.src = 'assets/images/optimized/dog-left.png'; 
 
         const dogRightImg = new Image();
-        dogRightImg.src = 'img/dog-right.png';
+        dogRightImg.src = 'assets/images/optimized/dog-right.png';
 
-        const shirtImages = [
-            'img/camiseta.png',
-            'img/camiseta-cavera.png',
-            'img/camisetaArmadillosB.png'
-        ].map(src => {
+        const shirtImagePaths = [
+            'assets/images/optimized/camiseta.png',
+            'assets/images/optimized/camiseta-cavera.png',
+            'assets/images/optimized/camisetaArmadillosB.png'
+        ];
+        const shirtImages = new Map();
+
+        function getShirtImage(src) {
+            if (shirtImages.has(src)) return shirtImages.get(src);
+
             const image = new Image();
-            image.src = src;
             image.onerror = () => console.error(`Não foi possível carregar o modelo de camiseta: ${src}`);
+            image.src = src;
+            shirtImages.set(src, image);
             return image;
-        });
+        }
 
         const player = {
             x: 0,
@@ -157,6 +178,55 @@
             collectToast.classList.add('is-visible');
         }
 
+        function playAudio(audio, soundName) {
+            audio.play().catch(error => {
+                console.warn(`Não foi possível reproduzir ${soundName}:`, error);
+            });
+        }
+
+        function startAmbientSound() {
+            if (soundEnabled && ambientSound.paused) {
+                playAudio(ambientSound, 'o som ambiente');
+            }
+        }
+
+        function stopAmbientSound() {
+            ambientSound.pause();
+            ambientSound.currentTime = 0;
+        }
+
+        function playCollectionSound() {
+            if (!soundEnabled) return;
+
+            collectionSound.currentTime = 0;
+            playAudio(collectionSound, 'o som de camiseta coletada');
+        }
+
+        function playOutcomeSound() {
+            collectionSound.pause();
+            collectionSound.currentTime = 0;
+            const outcomeSound = isWin ? winSound : gameOverSound;
+            outcomeSound.currentTime = 0;
+            playAudio(outcomeSound, isWin ? 'o som de vitória' : 'o som de fim de jogo');
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? 'Som: ligado' : 'Som: desligado';
+            soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+
+            if (!soundEnabled) {
+                stopAmbientSound();
+                [collectionSound, gameOverSound, winSound].forEach(audio => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                });
+                return;
+            }
+
+            if (isGameStarted && !isGameOver && !isWin) startAmbientSound();
+        }
+
         collectToast.addEventListener('animationend', () => {
             collectToast.hidden = true;
             collectToast.classList.remove('is-visible');
@@ -164,6 +234,7 @@
 
         restartButton.addEventListener('click', initGame);
         startButton.addEventListener('click', initGame);
+        soundToggle.addEventListener('click', toggleSound);
 
         function createPlatform(yPosition, referencePlatform) {
             let x = Math.random() * (canvas.width - platformWidth);
@@ -214,7 +285,9 @@
                 type === 'normal' &&
                 totalPlatformsCreated % 5 === 0
             ) {
-                const shirtImage = shirtImages[Math.floor(Math.random() * shirtImages.length)];
+                const shirtImage = getShirtImage(
+                    shirtImagePaths[Math.floor(Math.random() * shirtImagePaths.length)]
+                );
                 shirts.push({
                     x: newPlat.x + platformWidth / 2 - shirtWidth / 2,
                     y: newPlat.y - shirtHeight - 2,
@@ -240,10 +313,16 @@
             keys.left = false;
             keys.right = false;
             previousEndState = false;
+            [gameOverSound, winSound].forEach(audio => {
+                audio.pause();
+                audio.currentTime = 0;
+            });
+            if (soundEnabled) collectionSound.load();
             endScreen.hidden = true;
             collectToast.hidden = true;
             collectToast.classList.remove('is-visible');
             showControlsHint();
+            startAmbientSound();
 
             player.x = canvas.width / 2;
             player.y = 400;
@@ -346,8 +425,10 @@
         function drawPlayer() {
             const size = player.radius * 2.2;
 
-            let currentImg = dogRightImg;
-            if (player.vy < 0) {
+            let currentImg;
+            if (player.vx !== 0) {
+                currentImg = player.facing === 'left' ? dogLeftImg : dogRightImg;
+            } else if (player.vy < 0) {
                 currentImg = dogJumpImg;
             } else if (player.vy > 0) {
                 currentImg = dogFallImg;
@@ -376,6 +457,7 @@
 
             const isEnded = isGameOver || isWin;
             endScreen.hidden = !isEnded;
+            if (isEnded) stopAmbientSound();
             if (!isEnded) {
                 previousEndState = false;
                 return;
@@ -388,6 +470,7 @@
             finalScore.textContent = Math.floor(score);
 
             if (!previousEndState) {
+                if (soundEnabled) playOutcomeSound();
                 restartButton.focus();
             }
             previousEndState = true;
@@ -485,6 +568,7 @@
 
                 if (distX * distX + distY * distY < player.radius ** 2) {
                     shirtsCollected++;
+                    playCollectionSound();
                     showCollectionFeedback();
                     if (shirtsCollected >= TOTAL_SHIRTS) {
                         isWin = true;
